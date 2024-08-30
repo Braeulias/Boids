@@ -5,6 +5,7 @@ const VIEW_RADIUS: f32 = 80.0;
 const AVOID_RADIUS: f32 = 60.0;
 const MAX_SPEED: f32 = 6.0;
 const MAX_FORCE: f32 = 0.7;
+const ATTRACTION_RADIUS: f32 = 150.0; // Adjust this value to control the radius
 
 const MAX_COHESION_FORCE: f32 = 0.2;
 
@@ -136,6 +137,12 @@ impl Bird {
         self.apply_force(avoidance_force);
     }
 
+    fn apply_mouse_attraction(&mut self, mouse_pos: Vec2, attraction_strength: f32) {
+        let direction = (mouse_pos - self.position).normalize();
+        let force = direction * attraction_strength;
+        self.apply_force(force);
+    }
+
     fn find_neighbors<'a>(&self, birds: &'a [Bird]) -> Vec<&'a Bird> {
         let mut neighbors = Vec::new();
         let view_cos = (VIEW_ANGLE / 2.0).cos(); // Cosine of 135 degrees
@@ -239,6 +246,9 @@ async fn main() {
     let obstacle_radius = 20.0;
 
     let mut delete_mode = false;
+
+    let mouse_attraction_strength = 0.4;
+
     loop {
 
         clear_background(BLACK);
@@ -255,6 +265,17 @@ async fn main() {
                 }
             }
 
+        }
+
+        let mouse_pos = Vec2::new(mouse_position().0, mouse_position().1);
+
+        if is_mouse_button_down(MouseButton::Left) {
+            for bird in birds.iter_mut() {
+                let distance = bird.position.distance(mouse_pos);
+                if distance < ATTRACTION_RADIUS {
+                    bird.apply_mouse_attraction(mouse_pos, mouse_attraction_strength);
+                }
+            }
         }
 
         if is_key_pressed(KeyCode::D) {
