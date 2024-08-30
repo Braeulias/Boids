@@ -12,12 +12,36 @@ const MAX_SEPARATION_FORCE: f32 = 0.7; // Define a max separation force constant
 const MAX_ALIGNMENT_FORCE: f32 = 0.3; // Define a max alignment force constant
 const VIEW_ANGLE: f32 = std::f32::consts::PI * 3.0 / 2.0; //(270 degrees)
 
+
+struct Obstacle {
+    position: Vec2,
+    radius: f32,
+}
+
+impl Obstacle {
+    fn new(position: Vec2, radius: f32) -> Obstacle{
+        Obstacle { position, radius }
+    }
+
+    fn draw(&self) {
+        draw_circle(self.position.x, self.position.y, self.radius, RED);
+    }
+
+    fn contains(&self, point: Vec2) -> bool {
+        self.position.distance(point) < self.radius
+    }
+
+
+}
+
+
 #[derive(Clone)]
 struct Bird {
     position: Vec2,
     velocity: Vec2,
     acceleration: Vec2,
 }
+
 
 impl Bird {
     fn new() -> Bird {
@@ -38,11 +62,12 @@ impl Bird {
         self.acceleration += force;
     }
 
-    fn update(&mut self, birds: &[Bird]) {
+    fn update(&mut self, birds: &[Bird], obstacles: &[Obstacle]) {
         self.apply_separation(birds);
         self.apply_alignment(birds);
         self.apply_cohesion(birds);
 
+        self.apply_obstacle_avoidance(obstacles);
         self.apply_random_force();
 
         self.velocity += self.acceleration;
@@ -83,6 +108,32 @@ impl Bird {
 
         draw_triangle(p1, p2, p3, WHITE);
 
+    }
+
+    fn calculate_obstacle_avoidance(&self, obstacles: &[Obstacle]) -> Vec2 {
+        let mut avoidance_force = Vec2::new(0.0, 0.0);
+        let mut total_weight = 0.0;
+
+        for obstacle in obstacles {
+            let distance = self.position.distance(obstacle.position);
+
+            if distance < (obstacle.radius + 20.0) { // Adjust this threshold as needed
+                let diff = self.position - obstacle.position;
+                let weight = 1.0 / distance; // Increase weight with closer obstacles
+                avoidance_force += diff.normalize() * weight;
+                total_weight += weight;
+            }
+        }
+
+        if total_weight > 0.0 {
+            avoidance_force /= total_weight; // Normalize the force
+        }
+        avoidance_force * MAX_SEPARATION_FORCE // Scale the force
+    }
+
+    fn apply_obstacle_avoidance(&mut self, obstacles: &[Obstacle]) {
+        let avoidance_force = self.calculate_obstacle_avoidance(obstacles);
+        self.apply_force(avoidance_force);
     }
 
     fn find_neighbors<'a>(&self, birds: &'a [Bird]) -> Vec<&'a Bird> {
@@ -183,20 +234,29 @@ impl Bird {
 #[macroquad::main("Boids")]
 async fn main() {
     let mut birds: Vec<Bird> = (0..BOIDS_COUNT).map(|_| Bird::new()).collect();
-
+    let mut obstacles: Vec<Obstacle> = Vec::new();
+    let obstacle_radius = 20.0;
     loop {
 
         clear_background(BLACK);
 
+        if is_mouse_button_pressed(MouseButton::Right) {
+            let mouse_pos = mouse_position();
+            obstacles.push(Obstacle::new(Vec2::new(mouse_pos.0, mouse_pos.1), obstacle_radius));
+        }
+
         let birds_copy = birds.clone();
         for bird in birds.iter_mut() {
 
-            bird.update(&birds_copy);
+            bird.update(&birds_copy, &obstacles);
         }
         for bird in &birds {
             bird.draw();
         }
 
+        for obstacle in &obstacles {
+            obstacle.draw();
+        }
 
         next_frame().await;
     }
