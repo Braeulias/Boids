@@ -1,15 +1,15 @@
 use macroquad::prelude::*;
 
-const BOIDS_COUNT: usize = 100;
+const BOIDS_COUNT: usize = 150;
 const VIEW_RADIUS: f32 = 80.0;
 const AVOID_RADIUS: f32 = 60.0;
 const MAX_SPEED: f32 = 6.0;
 const MAX_FORCE: f32 = 0.7;
 
-const MAX_COHESION_FORCE: f32 = 0.3;
+const MAX_COHESION_FORCE: f32 = 0.2;
 
 const MAX_SEPARATION_FORCE: f32 = 0.7; // Define a max separation force constant
-const MAX_ALIGNMENT_FORCE: f32 = 0.5; // Define a max alignment force constant
+const MAX_ALIGNMENT_FORCE: f32 = 0.3; // Define a max alignment force constant
 const VIEW_ANGLE: f32 = std::f32::consts::PI * 3.0 / 2.0; //(270 degrees)
 
 #[derive(Clone)]
@@ -43,6 +43,8 @@ impl Bird {
         self.apply_alignment(birds);
         self.apply_cohesion(birds);
 
+        self.apply_random_force();
+
         self.velocity += self.acceleration;
         self.velocity = self.velocity.clamp_length(MAX_SPEED / 2.0, MAX_SPEED);
         self.position += self.velocity;
@@ -60,6 +62,14 @@ impl Bird {
         } else if self.position.y < 0.0 {
             self.position.y = screen_height();
         }
+    }
+
+    fn apply_random_force(&mut self) {
+        let random_force = Vec2::new(
+            rand::gen_range(-0.1, 0.1),
+            rand::gen_range(-0.1, 0.1)
+        );
+        self.apply_force(random_force);
     }
 
 
