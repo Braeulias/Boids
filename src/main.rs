@@ -234,16 +234,33 @@ impl Bird {
 #[macroquad::main("Boids")]
 async fn main() {
     let mut birds: Vec<Bird> = (0..BOIDS_COUNT).map(|_| Bird::new()).collect();
+
     let mut obstacles: Vec<Obstacle> = Vec::new();
     let obstacle_radius = 20.0;
+
+    let mut delete_mode = false;
     loop {
 
         clear_background(BLACK);
 
         if is_mouse_button_pressed(MouseButton::Right) {
             let mouse_pos = mouse_position();
-            obstacles.push(Obstacle::new(Vec2::new(mouse_pos.0, mouse_pos.1), obstacle_radius));
+            if is_mouse_button_pressed(MouseButton::Right) {
+                if delete_mode {
+                    // Remove obstacle if in delete mode
+                    obstacles.retain(|obstacle| !obstacle.contains(Vec2::new(mouse_pos.0, mouse_pos.1)));
+                } else {
+                    // Add new obstacle if not in delete mode
+                    obstacles.push(Obstacle::new(Vec2::new(mouse_pos.0, mouse_pos.1), obstacle_radius));
+                }
+            }
+
         }
+
+        if is_key_pressed(KeyCode::D) {
+            delete_mode = !delete_mode; // Toggle delete mode
+        }
+
 
         let birds_copy = birds.clone();
         for bird in birds.iter_mut() {
