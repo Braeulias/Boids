@@ -1,11 +1,15 @@
 use macroquad::prelude::*;
 
 const BOIDS_COUNT: usize = 100;
-const VIEW_RADIUS: f32 = 50.0;
-const AVOID_RADIUS: f32 = 35.0;
-const MAX_SPEED: f32 = 4.0;
-const MAX_FORCE: f32 = 0.65;
+const VIEW_RADIUS: f32 = 80.0;
+const AVOID_RADIUS: f32 = 60.0;
+const MAX_SPEED: f32 = 6.0;
+const MAX_FORCE: f32 = 0.7;
 
+const MAX_COHESION_FORCE: f32 = 0.3;
+
+const MAX_SEPARATION_FORCE: f32 = 0.7; // Define a max separation force constant
+const MAX_ALIGNMENT_FORCE: f32 = 0.5; // Define a max alignment force constant
 const VIEW_ANGLE: f32 = std::f32::consts::PI * 3.0 / 2.0; //(270 degrees)
 
 #[derive(Clone)]
@@ -35,14 +39,16 @@ impl Bird {
     }
 
     fn update(&mut self, birds: &[Bird]) {
-        self.apply_seperation(birds);
+        self.apply_separation(birds);
         self.apply_alignment(birds);
+        self.apply_cohesion(birds);
 
         self.velocity += self.acceleration;
-        self.velocity = self.velocity.clamp_length(MAX_SPEED / 2.0 , MAX_SPEED);
-        self.position += self.velocity;     //updating position
+        self.velocity = self.velocity.clamp_length(MAX_SPEED / 2.0, MAX_SPEED);
+        self.position += self.velocity;
         self.acceleration = Vec2::new(0.0, 0.0);
 
+        // Wrap-around screen
         if self.position.x > screen_width() {
             self.position.x = 0.0;
         } else if self.position.x < 0.0 {
@@ -54,8 +60,8 @@ impl Bird {
         } else if self.position.y < 0.0 {
             self.position.y = screen_height();
         }
-
     }
+
 
     fn draw(&self) {
         let direction = self.velocity.normalize_or_zero();
@@ -91,6 +97,32 @@ impl Bird {
         neighbors
     }
 
+    fn calculate_cohesion(&self, neighbors: &[&Bird]) -> Vec2 {
+        let mut average_position = Vec2::new(0.0, 0.0);
+        let count = neighbors.len() as f32;
+
+        if count > 0.0 {
+            for neighbor in neighbors {
+                average_position += neighbor.position;
+            }
+            average_position /= count;
+            let cohesion_force = (average_position - self.position).normalize() * MAX_SPEED;
+
+            // Optionally reduce the force applied
+            cohesion_force * 0.5
+        } else {
+            Vec2::new(0.0, 0.0)
+        }
+    }
+
+
+    fn apply_cohesion(&mut self, birds: &[Bird]) {
+        let neighbors = self.find_neighbors(birds);
+        let cohesion_force = self.calculate_cohesion(&neighbors) - self.velocity;
+        let clamped = cohesion_force.clamp_length_max(MAX_COHESION_FORCE); // Use clamped max cohesion force
+
+        self.apply_force(clamped);
+    }
     fn calculate_alignment(&self,neighbors: &[&Bird]) -> Vec2 {
         let mut average_velocity = Vec2::new(0.0, 0.0);
         let count = neighbors.len() as f32;
@@ -109,29 +141,29 @@ impl Bird {
     fn apply_alignment(&mut self, birds: &[Bird]) {
         let neighbors = self.find_neighbors(birds);
         let alignment_force = self.calculate_alignment(&neighbors);
-        let clamped = alignment_force.clamp_length_max(MAX_FORCE);
+
+        let clamped = alignment_force.clamp_length_max(MAX_ALIGNMENT_FORCE); // Use clamped max alignment force
 
         self.apply_force(clamped);
     }
 
-    fn calculate_seperation(&self, neighbors: &[&Bird]) -> Vec2 {
-        let mut seperation_force = Vec2::new(0.0, 0.0);
+    fn calculate_separation(&self, neighbors: &[&Bird]) -> Vec2 {
+        let mut separation_force = Vec2::new(0.0, 0.0);
 
         for neighbor in neighbors {
             let distance = self.position.distance(neighbor.position);
             if distance < AVOID_RADIUS && distance > 0.0 {
                 let diff = self.position - neighbor.position;
-                seperation_force += diff.normalize() / distance
+                separation_force += diff.normalize() / distance;
             }
         }
-        seperation_force
+        separation_force * 1.5 // Increase the effect of separation
     }
-
-    fn apply_seperation(&mut self, birds: &[Bird]) {
+    fn apply_separation(&mut self, birds: &[Bird]) {
         let neighbors = self.find_neighbors(birds);
-        let seperation_force = self.calculate_seperation(&neighbors);
+        let separation_force = self.calculate_separation(&neighbors);
 
-        let clamped = seperation_force.clamp_length_max(MAX_FORCE);
+        let clamped = separation_force.clamp_length_max(MAX_SEPARATION_FORCE); // Use clamped max separation force
 
         self.apply_force(clamped);
     }
