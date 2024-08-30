@@ -5,7 +5,7 @@ Boids is an implementation of Craig Reynolds' famous [Boids algorithm](https://w
 
 ## 🖼️ Demo Video
 
-[![Boids Demo](https://img.youtube.com/vi/your-video-id-here/0.jpg)](https://www.youtube.com/watch?v=your-video-id-here)
+![Boids_Demo](https://github.com/Braeulias/Boids/blob/master/assets/Boids_demo.gif)
 
 ## 🚀 Features
 
