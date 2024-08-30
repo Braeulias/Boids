@@ -4,7 +4,6 @@ const BOIDS_COUNT: usize = 150; //amount of Boids, change if you want
 const VIEW_RADIUS: f32 = 80.0; //Boid ViewRadius
 const AVOID_RADIUS: f32 = 60.0; //Boid avoid radius
 const MAX_SPEED: f32 = 6.0; //Max boid speed
-const MAX_FORCE: f32 = 0.7; // Max force a boid can be pulled by
 const MOUSE_ATTRACTION_RADIUS: f32 = 150.0; //Name says it
 
 const MAX_COHESION_FORCE: f32 = 0.2; //Force that groups them together
