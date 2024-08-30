@@ -5,7 +5,7 @@ const VIEW_RADIUS: f32 = 80.0;
 const AVOID_RADIUS: f32 = 60.0;
 const MAX_SPEED: f32 = 6.0;
 const MAX_FORCE: f32 = 0.7;
-const ATTRACTION_RADIUS: f32 = 150.0; // Adjust this value to control the radius
+const MOUSE_ATTRACTION_RADIUS: f32 = 150.0;
 
 const MAX_COHESION_FORCE: f32 = 0.2;
 
@@ -272,7 +272,7 @@ async fn main() {
         if is_mouse_button_down(MouseButton::Left) {
             for bird in birds.iter_mut() {
                 let distance = bird.position.distance(mouse_pos);
-                if distance < ATTRACTION_RADIUS {
+                if distance < MOUSE_ATTRACTION_RADIUS {
                     bird.apply_mouse_attraction(mouse_pos, mouse_attraction_strength);
                 }
             }
