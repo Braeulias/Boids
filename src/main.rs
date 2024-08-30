@@ -238,9 +238,27 @@ impl Bird {
 
 
 }
-#[macroquad::main("Boids")]
+
+
+fn create_birds() -> Vec<Bird> {
+    (0..BOIDS_COUNT).map(|_| Bird::new()).collect()
+}
+
+
+
+fn window_conf() -> Conf {
+    Conf {
+        window_title: "Boids".to_owned(),
+        fullscreen: true, // Enable fullscreen
+        ..Default::default()
+    }
+}
+
+
+#[macroquad::main(window_conf)]
 async fn main() {
-    let mut birds: Vec<Bird> = (0..BOIDS_COUNT).map(|_| Bird::new()).collect();
+    let mut birds = create_birds();
+    let mut fullscreen = true; // Track fullscreen state
 
     let mut obstacles: Vec<Obstacle> = Vec::new();
     let obstacle_radius = 20.0;
@@ -282,6 +300,20 @@ async fn main() {
             delete_mode = !delete_mode; // Toggle delete mode
         }
 
+        if is_key_pressed(KeyCode::C) {
+            obstacles.clear();
+        }
+
+        if is_key_pressed(KeyCode::R) {
+            birds = create_birds(); // Reset birds
+            obstacles.clear(); // Clear obstacles
+        }
+
+        if is_key_pressed(KeyCode::F) {
+            fullscreen = !fullscreen; // Toggle fullscreen state
+            set_fullscreen(fullscreen); // Apply fullscreen setting
+        }
+
 
         let birds_copy = birds.clone();
         for bird in birds.iter_mut() {
@@ -302,3 +334,4 @@ async fn main() {
 
 
 }
+
