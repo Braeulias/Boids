@@ -23,7 +23,7 @@ To run this project locally, you'll need Rust installed. You can install Rust by
 1. Clone the repository:
 
     ```bash
-    git clone https://github.com/your-username/boids.git
+    git clone https://github.com/Braeulias/Boids.git
     cd boids
     ```
 
